@@ -20,13 +20,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Reconstruct source tree
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p app
+          cat \
+            .bootstrap/aether-src.xz.b64.part-000 \
+            .bootstrap/aether-src.xz.b64.part-001 \
+            .bootstrap/aether-src.xz.b64.part-002 \
+            .bootstrap/aether-src.xz.b64.part-003 \
+            .bootstrap/fix004-0 \
+            .bootstrap/fix004-1 \
+            .bootstrap/fix004-2 \
+            .bootstrap/fix004-3 \
+            .bootstrap/aether-src.xz.b64.part-005 \
+            .bootstrap/aether-src.xz.b64.part-006 \
+            .bootstrap/aether-src.xz.b64.part-007 \
+            .bootstrap/aether-src.xz.b64.part-008 \
+            .bootstrap/aether-src.xz.b64.part-009 \
+            .bootstrap/aether-src.xz.b64.part-010 \
+            .bootstrap/aether-src.xz.b64.part-011 \
+            > /tmp/aether-src.tar.xz.b64
+          base64 --decode /tmp/aether-src.tar.xz.b64 > /tmp/aether-src.tar.xz
+          tar -xJf /tmp/aether-src.tar.xz -C app
+          test -f app/package.json
+          echo "Source reconstructed successfully"
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
           cache-dependency-path: app/package-lock.json
-        continue-on-error: true
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -36,17 +62,6 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Reconstruct source tree
-        shell: bash
-        run: |
-          set -euxo pipefail
-          mkdir -p app
-          cat .bootstrap/aether-src.xz.b64.part-* > /tmp/aether-src.tar.xz.b64
-          base64 --decode /tmp/aether-src.tar.xz.b64 > /tmp/aether-src.tar.xz
-          tar -xJf /tmp/aether-src.tar.xz -C app
-          test -f app/package.json
-          echo "Source reconstructed successfully"
 
       - name: Install npm dependencies
         working-directory: app
