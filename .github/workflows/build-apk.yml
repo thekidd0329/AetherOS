@@ -1,0 +1,73 @@
+name: Build AetherOS APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.bootstrap/**'
+      - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+        continue-on-error: true
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Reconstruct source tree
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p app
+          cat .bootstrap/aether-src.xz.b64.part-* > /tmp/aether-src.tar.xz.b64
+          base64 --decode /tmp/aether-src.tar.xz.b64 > /tmp/aether-src.tar.xz
+          tar -xJf /tmp/aether-src.tar.xz -C app
+          test -f app/package.json
+          echo "Source reconstructed successfully"
+
+      - name: Install npm dependencies
+        working-directory: app
+        run: npm install --no-audit --no-fund
+
+      - name: Build Android APK
+        working-directory: app
+        shell: bash
+        run: |
+          set -euxo pipefail
+          npm run build:apk
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          test -f "$APK"
+          mkdir -p ../artifacts
+          cp "$APK" ../artifacts/AetherOS-debug.apk
+          ls -lh ../artifacts/AetherOS-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AetherOS-debug-apk
+          path: artifacts/AetherOS-debug.apk
+          if-no-files-found: error
+          retention-days: 30
