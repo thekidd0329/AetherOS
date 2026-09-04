@@ -26,14 +26,20 @@ jobs:
           set -euxo pipefail
           mkdir -p app
           cat \
-            .bootstrap/aether-src.xz.b64.part-000 \
+            .bootstrap/fix000-0 \
+            .bootstrap/fix000-1 \
+            .bootstrap/fix000-2 \
+            .bootstrap/fix000-3 \
             .bootstrap/aether-src.xz.b64.part-001 \
             .bootstrap/aether-src.xz.b64.part-002 \
             .bootstrap/aether-src.xz.b64.part-003 \
             .bootstrap/fix004-0 \
             .bootstrap/fix004-1 \
             .bootstrap/fix004-2 \
-            .bootstrap/fix004-3 \
+            .bootstrap/fix004-30 \
+            .bootstrap/fix004-31 \
+            .bootstrap/fix004-32 \
+            .bootstrap/fix004-33 \
             .bootstrap/aether-src.xz.b64.part-005 \
             .bootstrap/aether-src.xz.b64.part-006 \
             .bootstrap/aether-src.xz.b64.part-007 \
