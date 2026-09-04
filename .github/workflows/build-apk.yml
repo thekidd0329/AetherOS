@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - '.bootstrap/**'
+      - '.overrides/**'
       - '.github/workflows/build-apk.yml'
 
 permissions:
@@ -51,7 +52,42 @@ jobs:
           base64 --decode /tmp/aether-src.tar.xz.b64 > /tmp/aether-src.tar.xz
           tar -xJf /tmp/aether-src.tar.xz -C app
           test -f app/package.json
-          echo "Source reconstructed successfully"
+
+      - name: Apply real launcher conversion
+        shell: bash
+        run: |
+          set -euxo pipefail
+          base64 --decode .overrides/clean-launcher.patch.gz.b64 | gzip -dc > /tmp/clean-launcher.patch
+          (cd app && patch -p1 < /tmp/clean-launcher.patch)
+
+          # Remove the old simulator/demo surface completely.
+          rm -rf \
+            app/src/components/chassis \
+            app/src/components/device \
+            app/src/components/ephemeral \
+            app/src/components/google \
+            app/src/components/inspector \
+            app/src/components/lock \
+            app/src/components/permanent \
+            app/src/components/tools \
+            app/src/components/system
+          rm -f \
+            app/src/components/effects/CyberDeveloperHudOverlay.tsx \
+            app/src/components/apps/CalculatorApp.tsx \
+            app/src/components/apps/CameraApp.tsx \
+            app/src/components/apps/ClockApp.tsx \
+            app/src/components/apps/MusicApp.tsx \
+            app/src/components/apps/NotesApp.tsx \
+            app/src/components/apps/PhoneApp.tsx \
+            app/src/components/apps/TerminalApp.tsx \
+            app/src/components/apps/WeatherApp.tsx \
+            app/src/data/conciergeData.ts \
+            app/src/types/concierge.ts
+
+          ! grep -R "Pixel10ProShell\|Dr. Evelyn Vance\|MarkGpsEngine\|SentinelFirewallAndSyslog" -n app/src
+          grep -q "HomeScreen" app/src/App.tsx
+          grep -q "NativeLauncher" app/src/App.tsx
+          echo "Clean native launcher source ready"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -71,6 +107,10 @@ jobs:
         working-directory: app
         run: npm install --no-audit --no-fund
 
+      - name: Type-check launcher
+        working-directory: app
+        run: npm run lint
+
       - name: Build Android APK
         working-directory: app
         shell: bash
@@ -80,13 +120,13 @@ jobs:
           APK="android/app/build/outputs/apk/debug/app-debug.apk"
           test -f "$APK"
           mkdir -p ../artifacts
-          cp "$APK" ../artifacts/AetherOS-debug.apk
-          ls -lh ../artifacts/AetherOS-debug.apk
+          cp "$APK" ../artifacts/AetherOS-clean-debug.apk
+          ls -lh ../artifacts/AetherOS-clean-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: AetherOS-debug-apk
-          path: artifacts/AetherOS-debug.apk
+          name: AetherOS-clean-debug-apk
+          path: artifacts/AetherOS-clean-debug.apk
           if-no-files-found: error
           retention-days: 30
