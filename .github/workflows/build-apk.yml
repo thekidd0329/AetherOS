@@ -70,7 +70,8 @@ jobs:
             app/src/components/lock \
             app/src/components/permanent \
             app/src/components/tools \
-            app/src/components/system
+            app/src/components/system \
+            app/src/components/modals
           rm -f \
             app/src/components/effects/CyberDeveloperHudOverlay.tsx \
             app/src/components/apps/CalculatorApp.tsx \
